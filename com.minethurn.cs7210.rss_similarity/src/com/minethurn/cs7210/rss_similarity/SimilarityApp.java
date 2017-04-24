@@ -197,7 +197,7 @@ public class SimilarityApp
     *        the website URL
     * @return a distinct human readable name for the website
     */
-   private static String getWebsiteName(final String name)
+   public static String getWebsiteName(final String name)
    {
       String result = name;
       try

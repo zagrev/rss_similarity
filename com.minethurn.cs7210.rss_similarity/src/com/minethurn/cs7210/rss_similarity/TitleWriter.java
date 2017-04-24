@@ -73,8 +73,10 @@ public class TitleWriter implements AutoCloseable
    public static final int OUT_DATE = 2;
    /** the title of the article */
    public static final int OUT_TITLE = 3;
+   /** the title of the article */
+   public static final int OUT_TEXT = 3;
    /** number fo fields */
-   public static final int OUT_FIELD_COUNT = 4;
+   public static final int OUT_FIELD_COUNT = 5;
 
    /**
     * Clean the given string by removing all the special characters and numbers. That is, leave only alphabetic
@@ -176,13 +178,13 @@ public class TitleWriter implements AutoCloseable
          }
       }
 
-      // if no words left, ignore
-      if (titleList.size() > 0)
+      // if no words left, ignore. Also, if no date, ignore
+      if (titleList.size() > 0 && date != null)
       {
          final String[] finalList = titleList.toArray(new String[titleList.size()]);
          Arrays.sort(finalList);
 
-         final long seconds = date == null ? 0 : date.toEpochSecond(ZoneOffset.UTC);
+         final long seconds = date.toEpochSecond(ZoneOffset.UTC);
          final String cleanTitle = String.join(" ", finalList);
 
          final String[] fields = new String[OUT_FIELD_COUNT];
@@ -190,13 +192,16 @@ public class TitleWriter implements AutoCloseable
          fields[OUT_URL] = url;
          fields[OUT_DATE] = Long.toString(seconds);
          fields[OUT_TITLE] = cleanTitle;
+         // fields[OUT_TEXT] = description;
 
          output.writeNext(fields);
       }
       else
-      {
-         System.err.println("title all stop words, ignoring (" + title + ")");
-      }
+         if (date != null)
+         {
+            System.err.println("title all stop words, ignoring (" + title + ")");
+         }
+      // if invalid date, error has already be reported
    }
 
 }

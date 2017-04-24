@@ -1,0 +1,30 @@
+14 Mar 2017
+
+Maybe we can use the links back to the original article.
+define a priori a collection of source that we jsut assume articles start.
+ wordnet a giant semantic network of connections between words
+ 
+look for implementations of common diffusion through networks
+Should already exists.
+ igraph 
+
+16 Mar 2017
+
+ http://ahmedbesbes.com/how-to-mine-newsfeed-data-and-extract-interactive-insights-in-python.html
+
+Possible Topics
+ harvard fake news
+ 
+Ben to look up igraph tools for clustering and diffusion
+I'll post the output file to web and Ben URL
+we'll look for interesting articles to find/use
+I'll write code to create graph of time related data
+
+Plan:
+
+1. cluster titles to identify news stories that are "the same"
+2. manually review stories and keep ones that are really "the same"
+3. create graph of identified stories
+4. Try to cluster based on publication time
+5. ??
+6. Make millions!

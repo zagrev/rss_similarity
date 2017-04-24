@@ -23,18 +23,35 @@ F_END_TIME <- 8
 F_SIMILARITY <- 5
 F_TIME_DISTANCE <- 6
 
-edgeList <- read.csv("distance-wiretap.csv",header=F) 
+type="anim"
+type="pdf"
+type="svg"
+
+filename = "distance-wiretap.csv"
+filename = "distance-drag.csv"
+filename = "distance-flag.csv"
+#filename = "distance-nsa.csv"
+#filename = "distance-youtube.csv"
+#filename = "distance-rice.csv"
+#filename = "distance-tax.csv"
+#filename = "distance-kaepernick.csv"
+
+edgeList <- read.csv(filename,header=F) 
+edgeList <- as.matrix(edgeList)
+
+nodeTypes <- read.csv("websiteTypes.csv", header=F)
+nodeTypes <- as.matrix(nodeTypes)
+
 index <- order(edgeList[,F_START_TIME])
 indexLength <- length(index)
-
-edgeList <- as.matrix(edgeList)
 
 # NOTE that we order the edges by START_TIME. this only works because start and
 #      end are right next to each other in the input file
 g <- graph.edgelist(edgeList[index,F_START_URL:F_END_URL], directed = T) 
 
 # We then add the edge weights to this network
-weight=as.numeric(edgeList[,F_TIME_DISTANCE])
+maxTimeDifference = as.numeric(which.max(edgeList[,F_TIME_DISTANCE]))
+weight=maxTimeDifference - as.numeric(edgeList[,F_TIME_DISTANCE])
 width=(as.numeric(edgeList[,F_SIMILARITY])*10)-5
 
 V(g)$label.cex=0.5
@@ -44,40 +61,60 @@ E(g)$end = edgeList[,F_END_TIME]
 
 l <- layout.fruchterman.reingold(g)
 
-#palette = colorRampPalette(c('red','green'))
+colorNodes <- function(Xgraph)
+{
+  V(Xgraph)$color <- "black" #"orange"
+  V(Xgraph)$color[which(degree(Xgraph, mode="in")==0 && degree(Xgraph, mode="out") > 0)] <- "green"
+  V(Xgraph)$color[which(degree(Xgraph, mode="in")>0 && degree(Xgraph, mode="out")==0)] <- "red"
+}
 
-V(g)$color <- "orange"
-V(g)$color[which(degree(g, mode="in")==0)] <- "green"
-V(g)$color[which(degree(g, mode="in")>0 && degree(g, mode="out")==0)] <- "red"
-
-# find the name of the destination node with the latest time
-latestNode <- get.edges(g, length(E(g)))[2]
-V(g)$color[latestNode] <- "red"
-
-
-## Some code to make an animation... 
 edgeCount <- length(index)
 
 
-#maxtime = as.numeric(edgeList[index[indexLength],F_END_TIME])
-#mintime = as.numeric(edgeList[index[1],F_START_TIME])
-#interval <- (maxtime-mintime)/30
+maxtime = as.numeric(edgeList[index[indexLength],F_END_TIME])
+mintime = as.numeric(edgeList[index[1],F_START_TIME])
+interval <- (maxtime-mintime)/30
 
-animation::saveGIF({
-#  for (i in seq(mintime+interval, maxtime, interval))
-  for (i in seq(2, edgeCount, 1))
+if (type == "pdf")
+{
+  pdf(paste0(filename,".pdf"), width = 8, height = 11, pointsize = 6)
+  pg <- graph.data.frame(edgeList[1:indexLength,F_START_URL:F_END_URL], vertices=V(g)$name, directed = T) 
+  
+  colorNodes(pg)
+  
+  plot(pg,layout=l,vertex.size=5,rescale=T, edge.arrow.size=.7)
+  dev.off()
+}
+if (type=="anim")
+{
+  animation::saveGIF(
   {
-#    pg <- graph.data.frame(edgeList[which(E(g)$start < i),F_START_URL:F_END_URL], vertices=V(g)$name, directed = T) 
-    pg <- graph.data.frame(edgeList[1:i,F_START_URL:F_END_URL], vertices=V(g)$name, directed = T) 
-    
-    V(pg)$color <- "orange"
-    V(pg)$color[which(degree(pg, mode="in")==0 && degree(pg, mode="out") > 0)] <- "green"
-    V(pg)$color[which(degree(pg, mode="in")>0 && degree(pg, mode="out")==0)] <- "red"
-    
-    plot(pg,layout=l,vertex.size=5,rescale=T)
-#    plot(pg,layout=l,vertex.size=5,rescale=F,edge.arrow.size=0.25)
-  }
-}, movie.name="er.gif", interval=0.1, ani.width=1000, ani.height=1000, ani.loop=2)
+  #  for (i in seq(mintime+interval, maxtime, interval))
+    for (i in seq(2, edgeCount, 1))
+    {
+  #    pg <- graph.data.frame(edgeList[which(E(g)$start < i),F_START_URL:F_END_URL], vertices=V(g)$name, directed = T) 
+      pg <- graph.data.frame(edgeList[1:i,F_START_URL:F_END_URL], vertices=V(g)$name, directed = T) 
+      
+      colorNodes(pg)
+      
+      plot(pg,layout=l,vertex.size=5,rescale=T, edge.arrow.size=1)
+  #    plot(pg,layout=l,vertex.size=5,rescale=F,edge.arrow.size=0.25)
+    }
+  }, movie.name=paste0(filename,".gif"), interval=0.1, ani.width=1000, ani.height=1000, clean = F)
+}
+if (type == "svg")
+{
+  svg(paste0(filename,".svg"), width = 6, height = 6, pointsize = 6)
+  pg <- graph.data.frame(edgeList[1:indexLength,F_START_URL:F_END_URL], vertices=V(g)$name, directed = T) 
+  
+  colorNodes(pg)
+  V(pg)$type <- nodeTypes[match(V(pg)$name, nodeTypes[,1]),2]
+  V(pg)$color <- ifelse(V(pg)$type=="Alt", "orange", "slategray3")
+  
+  
+  plot(pg,layout=l,vertex.size=5,rescale=T, edge.arrow.size=.7)
+  dev.off()
+}
 
 #plot(g,layout=layout.fruchterman.reingold,edge.width=(100000 - E(g)$weight)/10000,vertex.size=5)
 #plot(g,layout=layout.fruchterman.reingold,vertex.size=5,edge.width=width,rescale=T)
